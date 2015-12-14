@@ -112,7 +112,7 @@ public class MyRLBot extends AdvancedRobot {
 		double diff = nnrlTrainer.train(nnInputs, imReward);
 		
 		//nn.train(inputs, answer, false)
-		//out.println("STATE="+curState+" REWARD="+reward+" DIFF="+diff);
+		out.println(" DIFF="+diff);
 		/* cumulative rewards */
 		reward = reward + imReward;
 		setDebugProperty("ImReward", " "+reward);
@@ -163,6 +163,7 @@ public class MyRLBot extends AdvancedRobot {
 	}
 
 	private void getInputs() {
+		/*
 		nnInputs[0] = NNState.getHeading(getHeading());
 		nnInputs[1] = NNState.getTargetDistance(enemy.distance);
 		nnInputs[2] = NNState.getTargetBearing(enemy.bearing);
@@ -177,7 +178,8 @@ public class MyRLBot extends AdvancedRobot {
 			nnInputs[4] = -1.0;
 		nnInputs[5] = NNState.getEnergy(getEnergy());
 		nnInputs[6] = NNState.nnSelectAction();
-		/*
+		*/
+		// hard way... no space state reduction at all!
 		nnInputs[0] = (double)(2/360)*getHeading()-1.0; //normalize to -1,1
 		nnInputs[1] = (double)(2/500)*enemy.distance-1.0;
 		nnInputs[2] = (double)(2/(2*PI))*enemy.bearing-1.0;
@@ -191,8 +193,8 @@ public class MyRLBot extends AdvancedRobot {
 		else
 			nnInputs[4] = -1.0;
 		nnInputs[5] = (double)(2/100)*getEnergy()-1.0;
-		nnInputs[6] = nnrlTrainer.selectAction(xxx);
-		*/
+		nnInputs[6] = NNState.nnSelectAction();
+		
 	}
 	
 	private int getState() {

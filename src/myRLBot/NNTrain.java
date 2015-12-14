@@ -16,12 +16,12 @@ public class NNTrain {
 	private int prevState;
 	private int prevAction;
 	private NeuralNet nn;
-	private String weightsFile = "/Users/chwlo/Documents/workspace/NCnn/nnWeight.txt";
+	private String weightsFile = "/Users/chwlo/Documents/workspace/EECE592/data/nnWeight.txt";
 
 	private LUT table;
 
 	public NNTrain() {
-		nn = new NeuralNet(7,10,true);
+		nn = new NeuralNet(7, 10, true);
 		try {
 			nn.load(weightsFile);
 		} catch (IOException e) {
