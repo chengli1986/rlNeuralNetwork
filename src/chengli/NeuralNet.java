@@ -86,7 +86,7 @@ public class NeuralNet {
 	 * @param flag	 	the flag to specify data representation (binary vs. bipolar)
 	 * @return output 	weighted sum of each neurons at all layers
 	 */
-    public double forwardPropagation(double[] patterns, boolean flag) {
+    public double outputFor(double[] patterns, boolean flag) {
         
         /* take input patterns */
         for (int i = 0; i < patterns.length; i++) {
@@ -120,7 +120,7 @@ public class NeuralNet {
         
     	double deltaOutput;
     	double deltaHidden;
-    	double result = forwardPropagation(inputs, flag);
+    	double result = outputFor(inputs, flag);
         
       	/* binary vs. bipolar */
     	if (flag) {

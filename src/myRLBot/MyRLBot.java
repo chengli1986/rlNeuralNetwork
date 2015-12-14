@@ -30,7 +30,8 @@ public class MyRLBot extends AdvancedRobot {
 	private Target enemy;
 	private LUT lut;
 	private Train rlTrainer;
-	//private NeuralNet nn;
+	private NNTrain nnrlTrainer;
+	//public NeuralNet nn;
 	private double imReward = 0.0;
 	private double reward = 0.0;
 	private double firePower;
@@ -39,6 +40,9 @@ public class MyRLBot extends AdvancedRobot {
 	private int counter_hit = 0;
 	private int counter_fire = 0;
 	private int counter_ram = 0;
+	//private String weightsFile = "/Users/chwlo/Documents/workspace/NCnn/nnWeight.txt";
+	public double[] nnInputs = new double[7];
+	//private double nnrlQvalue[];
 	/* DEBUG PURPOSE
 	private int[][] stateIdx = new int[576][6];
 	static double[] array = new double[100];
@@ -57,11 +61,25 @@ public class MyRLBot extends AdvancedRobot {
 		 * LUT is really replaced or not?? */
 		/* ok, at least this part is verified */
 		lut = new LUT();
-		//out.println("Creating a empty neural network, no training yet...");
-		//nn = new NeuralNet(6,12);
-		load();
-		rlTrainer = new Train(lut);
 		enemy = new Target();
+		//nn = new NeuralNet(7, 10, true);
+
+		// comment out as LUT is replaced with NN
+		//rlLoad();
+		/*
+		try {
+			nn.load(weightsFile);
+		} catch (IOException e) {
+			e.getStackTrace();
+		}
+		*/
+		/* train object can only be instantiated
+		 * after LUT object is created... */
+		rlTrainer = new Train(lut);
+		
+		/* RL NN trainer object */
+		nnrlTrainer = new NNTrain();
+		
 		/* init of RLBot & enemey distance */
 		enemy.distance = 1000;
 		
@@ -83,18 +101,16 @@ public class MyRLBot extends AdvancedRobot {
 
 	private void setupRobotMovement(double pwr) {
 		
-		int curState = getState();
-		int curAction = rlTrainer.selectAction(curState);
+		//int curState = getState();
+		//int curAction = rlTrainer.selectAction(curState);
 		//out.println("=== setupRobotMovement() ===");
 		//out.println("curState="+curState+" curAction="+curAction+" imReward="+imReward);
 		
 		/* RL train every robocode processing unit: turn */
-		double diff = rlTrainer.train(curState, curAction, imReward);
+		//double diff = rlTrainer.train(curState, curAction, imReward);
+		getInputs();
+		double diff = nnrlTrainer.train(nnInputs, imReward);
 		
-		/* NNRL - use bipolar 
-		 * answer is the newQValue from the LUT 
-		 * assuming LUT is converged and will
-		 * not be modified any further... */
 		//nn.train(inputs, answer, false)
 		//out.println("STATE="+curState+" REWARD="+reward+" DIFF="+diff);
 		/* cumulative rewards */
@@ -105,7 +121,7 @@ public class MyRLBot extends AdvancedRobot {
 		isHitWall = 0;
 		isHitByBullet = 0;
 
-		switch (curAction) {
+		switch (nnrlTrainer.selectAction()) {
 			case Action.RobotAhead:
 				//setAhead(Action.RobotMoveDistance+Action.RobotMoveAddDistance);
 				//setAhead(Action.RobotMoveDistance);
@@ -146,6 +162,39 @@ public class MyRLBot extends AdvancedRobot {
 		}
 	}
 
+	private void getInputs() {
+		nnInputs[0] = NNState.getHeading(getHeading());
+		nnInputs[1] = NNState.getTargetDistance(enemy.distance);
+		nnInputs[2] = NNState.getTargetBearing(enemy.bearing);
+		if (isHitWall == 1)
+			nnInputs[3] = 1.0;
+		else
+			nnInputs[3] = -1.0;
+		
+		if (isHitByBullet == 1)
+			nnInputs[4] = 1.0;
+		else
+			nnInputs[4] = -1.0;
+		nnInputs[5] = NNState.getEnergy(getEnergy());
+		nnInputs[6] = NNState.nnSelectAction();
+		/*
+		nnInputs[0] = (double)(2/360)*getHeading()-1.0; //normalize to -1,1
+		nnInputs[1] = (double)(2/500)*enemy.distance-1.0;
+		nnInputs[2] = (double)(2/(2*PI))*enemy.bearing-1.0;
+		if (isHitWall == 1)
+			nnInputs[3] = 1.0;
+		else
+			nnInputs[3] = -1.0;
+		
+		if (isHitByBullet == 1)
+			nnInputs[4] = 1.0;
+		else
+			nnInputs[4] = -1.0;
+		nnInputs[5] = (double)(2/100)*getEnergy()-1.0;
+		nnInputs[6] = nnrlTrainer.selectAction(xxx);
+		*/
+	}
+	
 	private int getState() {
 		int heading = State.getHeading(getHeading()); // 4 headings
 		int targetDistance = State.getTargetDistance(enemy.distance); //3 distances
@@ -379,7 +428,7 @@ public class MyRLBot extends AdvancedRobot {
 			turnLeft(30);
 		}
 		*/
-  		save();
+  		//rlSave();
   		//saveToNN(State.nnInputTable);
   		//saveToNNVerify(stateIdx);
   		//saveToNNSimple();
@@ -400,7 +449,7 @@ public class MyRLBot extends AdvancedRobot {
   		imReward += change;
   		setDebugProperty("onDeath", " "+change);
   		*/
-  		save();
+  		//rlSave();
   		//saveToNN(State.nnInputTable);
   		//saveToNNVerify(stateIdx);
   		//saveToNNSimple();
@@ -413,7 +462,7 @@ public class MyRLBot extends AdvancedRobot {
   		out.println(">>> Reward: " + reward);
   	}
 
-  	public void load() {
+  	public void rlLoad() {
   		out.println(">>> load LUT");
   		try {
   			lut.loadFile(getDataFile("data.txt"));
@@ -421,7 +470,7 @@ public class MyRLBot extends AdvancedRobot {
   		}
   	}
 
-  	public void save() {
+  	public void rlSave() {
   		out.println(">>> save LUT");
   		try {
   			lut.saveFile(getDataFile("data.txt"));
