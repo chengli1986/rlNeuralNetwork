@@ -8,7 +8,7 @@ import java.io.FileReader;
 import java.io.BufferedReader;
 import java.io.IOException;
 
-public class xorMain {
+public class nnrlMain {
 
 	/* input patterns for XOR problem */
     static final double binary_inputs[][] = { { 1.0, 1.0 }, 
