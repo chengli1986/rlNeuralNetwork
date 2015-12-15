@@ -21,7 +21,7 @@ public class NNTrain {
 	private LUT table;
 
 	public NNTrain() {
-		nn = new NeuralNet(7, 10, true);
+		nn = new NeuralNet(7, 10, true, 0.01, 0.9);
 		try {
 			nn.load(weightsFile);
 		} catch (IOException e) {

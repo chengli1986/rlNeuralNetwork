@@ -43,8 +43,8 @@ public class nnrlMain {
 		bipolar_inputs = new double[2880][7]; //6 states + 1 action
 		expectedBipolarOutputs = new double[2880];
 		
-		NeuralNet nn = new NeuralNet(7, 10, isLoaded);
-		//NeuralNet nn = new NeuralNet(2, 4, isLoaded);
+		NeuralNet nn = new NeuralNet(7, 10, isLoaded, 0.01, 0.9);
+		//NeuralNet nn = new NeuralNet(2, 4, isLoaded, 0.2, 0.9);
 		 
 		String nnInputFile = "/Users/chwlo/Documents/workspace/EECE592/bin/myRLBot/MyRLBot.data/nn.txt";
 		BufferedReader br = null;

@@ -13,9 +13,12 @@ import java.io.InputStreamReader;
 public class NeuralNet {
 
 	/* Best configuration for RL NN training progress */
-    public static final double STEPSIZE = 0.01;
+    //public static final double STEPSIZE = 0.01;
+    // for xor training rate
     //public static final double STEPSIZE = 0.2;
-    public static final double MOMENTUM = 0.9;
+    //public static final double MOMENTUM = 0.9;
+	public double MOMENTUM = 0.0;
+	public double STEPSIZE = 0.0;
     public static final boolean DEBUG = false;
 
     /* neural network layers */
@@ -29,8 +32,11 @@ public class NeuralNet {
 	 * @param inputs 		number of inputs
 	 * @param hiddenTotal 	total number of hidden neurons
 	 */
-    public NeuralNet(int inputs, int hiddenTotal, boolean load) {
+    public NeuralNet(int inputs, int hiddenTotal, boolean load, double stepsize, double momentum) {
 
+    	this.STEPSIZE = stepsize;
+    	this.MOMENTUM = momentum;
+    	
     	/* add bias to input and hidden layers */
         input = new InputNeuron[inputs+1];
         hidden = new HiddenNeuron[hiddenTotal+1];
@@ -214,7 +220,6 @@ public class NeuralNet {
     		ArrayList connections = output.getConnections();
     		for (int i = 0; i < connections.size(); i++) {
     			Connection c = (Connection) connections.get(i);
-    	        //Neuron neuron = c.getFrom();
     	        //pw.println("--> hidden["+c.getFrom().getNeuronId()+"] to output["+c.getTo().getNeuronId()+"] weight: "+c.getWeight());
     	        pw.println(c.getWeight());
     	    }
@@ -224,7 +229,6 @@ public class NeuralNet {
     			for (int j = 0; j < connections.size(); j++) {
                     Connection c = (Connection) connections.get(j);               
                     if (c.getTo() == hidden[i]) {
-                        //Neuron neuron = c.getFrom();
                         //pw.println("--> input["+c.getFrom().getNeuronId()+"] to hidden["+c.getTo().getNeuronId()+"] weight: "+c.getWeight());
                         pw.println(c.getWeight());
                     }

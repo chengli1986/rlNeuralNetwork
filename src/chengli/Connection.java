@@ -22,7 +22,7 @@ public class Connection {
          * otherwise do nothing */
         if (!isLoaded) {
         	//weight = (double) Math.random()*1.0f-0.5f;
-        	weight = (double) Math.random()*1.0-1.0;
+        	weight = (double) Math.random()*1.0-0.5;
         }
     }
     
