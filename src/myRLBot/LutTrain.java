@@ -5,7 +5,7 @@ import java.util.Random;
 public class LutTrain {
 	public static final double ALPHA = 0.1;
 	public static final double GAMMA = 0.9;
-	public static final double EPSILON = 0.9;
+	public static final double EPSILON = 0.1;
 	
 	private static final boolean isQLearning = true;
 	private double diff;
@@ -18,15 +18,15 @@ public class LutTrain {
 		this.table = table;
 	}
 
-	public double train(int state, int action, double imRwd) {
+	public double lutTrain(int state, int action, double imRwd) {
 		if (isQLearning) {
 			/* Q-Learning (off-policy) learning */
 			double prevQValue = table.getQValue(prevState, prevAction);
 			double newQValue = prevQValue + ALPHA * (imRwd + GAMMA * table.getMaxQValue(state) - prevQValue);
 			diff = newQValue - prevQValue;
-			//System.out.println("=== train() ===");
-			//System.out.println("prevState: " + prevState + ", prevAction: " + prevAction);
-			//System.out.println("Old Q-Value: " + prevQValue + ", New Q-Value: " + newQValue + ", Different: " + (newQValue - prevQValue) + " and " + diff);
+			System.out.println("=== train() ===");
+			System.out.println("prevState: " + prevState + ", prevAction: " + prevAction);
+			System.out.println("Old Q-Value: " + prevQValue + ", New Q-Value: " + newQValue + ", Different: " + (newQValue - prevQValue) + " and " + diff);
 			/* Bootstrapping - backup new Q-value to old ones */
 			table.setQValue(prevState, prevAction, newQValue);
 		} else {

@@ -4,6 +4,7 @@ import java.awt.*;
 import java.awt.geom.*;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.File;
 
 import robocode.AdvancedRobot;
 import robocode.DeathEvent;
@@ -27,11 +28,11 @@ import chengli.NeuralNet;
 
 public class MyRLBot extends AdvancedRobot {
 	public static final double PI = Math.PI;
+	public static final boolean isRLNN = true;
 	private Target enemy;
 	private LUT lut;
 	private LutTrain lutTrainer;
 	private NeuralNetTrain nnrlTrainer;
-	//public NeuralNet nn;
 	private double imReward = 0.0;
 	private double reward = 0.0;
 	private double firePower;
@@ -41,6 +42,8 @@ public class MyRLBot extends AdvancedRobot {
 	private int counter_fire = 0;
 	private int counter_ram = 0;
 	public double[] nnInputs = new double[7];
+	private final String weightsFile = "/Users/chwlo/Documents/workspace/EECE592/data/nnWeight1.txt";
+	private final File wFile = new File(weightsFile);
 	
 	/* DEBUG PURPOSE
 	private int[][] stateIdx = new int[576][6];
@@ -60,19 +63,24 @@ public class MyRLBot extends AdvancedRobot {
 		/* be careful here about LUT init and if
 		 * LUT is really replaced or not?? */
 		/* ok, at least this part is verified */
-		lut = new LUT();
-		enemy = new Target();
-
-		// comment out as LUT is replaced with NN
-		//rlLoad();
+		if (!isRLNN) {
+			lut = new LUT();
+			lutLoad();
+		}
 
 		/* train object can only be instantiated
 		 * after LUT object is created... */
-		lutTrainer = new LutTrain(lut);
-		
-		/* RL NN trainer object */
-		nnrlTrainer = new NeuralNetTrain();
-		
+		if (!isRLNN) {
+			lutTrainer = new LutTrain(lut);
+		} else {
+			/* RL NN trainer object */
+			nnrlTrainer = new NeuralNetTrain();
+			out.println("Load NN weights...");
+			// load offline trained data, only for 1st run
+			//nnrlTrainer.nnLoad("/Users/chwlo/Documents/workspace/EECE592/data/nnWeight.txt");
+			nnrlTrainer.nnLoad(weightsFile);
+		}
+		enemy = new Target();
 		/* init of RLBot & enemey distance */
 		enemy.distance = 1000;
 		
@@ -94,18 +102,23 @@ public class MyRLBot extends AdvancedRobot {
 
 	private void setupRobotMovement(double pwr) {
 		
-		//int curState = getState();
-		//int curAction = rlTrainer.selectAction(curState);
-		//out.println("=== setupRobotMovement() ===");
-		//out.println("curState="+curState+" curAction="+curAction+" imReward="+imReward);
-		
-		/* RL train every robocode processing unit: turn */
-		//double diff = rlTrainer.train(curState, curAction, imReward);
+		/*
+		int curState = getLutState();
+		int curAction = lutTrainer.selectAction(curState);	
+		out.println("=== setupRobotMovement() ===");
+		out.println("curState="+curState+" curAction="+curAction+" imReward="+imReward);
+		// RL train every robocode processing unit: turn
+		double diff = lutTrainer.lutTrain(curState, curAction, imReward);
+		*/
 		
 		/* NN training code */
+		
 		getNNInputs();
-		double diff = nnrlTrainer.train(nnInputs, imReward);		
-		out.println(" DIFF="+diff);
+		double diff = nnrlTrainer.nnTrain(nnInputs, imReward);		
+		//out.println(" DIFF="+diff);
+		out.println(diff);
+		
+		
 		/* cumulative rewards */
 		reward = reward + imReward;
 		setDebugProperty("ImReward", " "+reward);
@@ -113,8 +126,20 @@ public class MyRLBot extends AdvancedRobot {
 		imReward = 0.0;
 		isHitWall = 0;
 		isHitByBullet = 0;
+		
+		/*
+		int action = 0;
+		
+		if (!isRLNN) {
+			lutTrainer.selectAction(curState);
+		} else {
+			// !!!Be careful here 
+			nnrlTrainer.selectAction(nnInputs);
+		}
+		*/
 
-		switch (nnrlTrainer.selectAction()) {
+		//switch (lutTrainer.selectAction(curState)) {
+		switch (nnrlTrainer.selectAction(nnInputs)) {
 			case Action.RobotAhead:
 				setAhead(Action.RobotMoveDistance);
 				//gunFire(pwr);
@@ -154,9 +179,13 @@ public class MyRLBot extends AdvancedRobot {
 			nnInputs[4] = -1.0;
 		
 		nnInputs[5] = NeuralNetState.getEnergy(getEnergy());
-		nnInputs[6] = NeuralNetState.nnSelectAction();
+		//nnInputs[6] = NeuralNetState.nnSelectAction();
+		// this is super dangerous...
+		nnInputs[6] = nnrlTrainer.selectAction(nnInputs);
 		
-		// hard way... no space state reduction at all!
+		
+		
+		// harder way... no space state reduction at all!
 		/*
 		nnInputs[0] = (double)(2/360)*getHeading()-1.0; //normalize to -1,1
 		nnInputs[1] = (double)(2/500)*enemy.distance-1.0;
@@ -171,7 +200,7 @@ public class MyRLBot extends AdvancedRobot {
 		else
 			nnInputs[4] = -1.0;
 		nnInputs[5] = (double)(2/100)*getEnergy()-1.0;
-		nnInputs[6] = NNState.nnSelectAction();
+		nnInputs[6] = nnrlTrainer.selectAction(nnInputs);
 		*/
 	}
 	
@@ -182,6 +211,7 @@ public class MyRLBot extends AdvancedRobot {
 		int energy = LutState.getEnergy(getEnergy()); // 3 energy levels
 		/* access to a particular state given indices */
 		int state = LutState.stateTable[heading][targetDistance][targetBearing][isHitWall][isHitByBullet][energy];
+		
 		/* DEBUG
 		setDebugProperty("heading", " "+heading);
 		setDebugProperty("distance", " "+targetDistance);
@@ -397,7 +427,8 @@ public class MyRLBot extends AdvancedRobot {
   		imReward += change;
   		setDebugProperty("onWin", " "+change);
   		*/
-  		//rlSave();
+  		if (!isRLNN)
+  			lutSave();
   		//saveToNN(State.nnInputTable);
   		//saveToNNVerify(stateIdx);
   		//saveToNNSimple();
@@ -418,7 +449,8 @@ public class MyRLBot extends AdvancedRobot {
   		imReward += change;
   		setDebugProperty("onDeath", " "+change);
   		*/
-  		//rlSave();
+  		if (!isRLNN)
+  			lutSave();
   		//saveToNN(State.nnInputTable);
   		//saveToNNVerify(stateIdx);
   		//saveToNNSimple();
@@ -484,10 +516,20 @@ public class MyRLBot extends AdvancedRobot {
   		}  
   	}
   	
+  	public void onRoundEnded(RoundEndedEvent event) {
+  		if (isRLNN) {
+  			out.println("Save NN weights...");
+  			nnrlTrainer.nnSave(wFile);
+  		} else {
+  			out.println("LUT implementation...");
+  		}
+  	}
+  	
   	public void onBattleEnded (BattleEndedEvent e) {
   		// only save NN format when LUT is converged
   		// also to save to NN simple to do verification
-  		lutSaveToNN(LutState.nnInputTable);
+  		if (!isRLNN)
+  			lutSaveToNN(LutState.nnInputTable);
   		//saveToNNSimple();
   	}
   	

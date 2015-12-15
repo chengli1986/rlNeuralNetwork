@@ -116,7 +116,7 @@ public class NeuralNetState {
 		  	return nnActionIdx;
 	  	} else {
 		  	/* greedy move */
-		  	// always fire...
+		  	/* always fire */
 	  		return 1.0;
 	  	}
   	}
