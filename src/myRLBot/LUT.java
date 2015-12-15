@@ -14,7 +14,7 @@ public class LUT {
 	//private int cnt = 0;
 	
 	public LUT() {
-		lut = new double[State.NumStates][Action.NumActions];
+		lut = new double[LutState.NumStates][Action.NumActions];
 		/* dummy init as it will be overwritten by load() */
 		init();
 		//System.out.println("state: "+State.NumStates);
@@ -24,7 +24,7 @@ public class LUT {
 	}
 
 	private void init() {
-		for (int i = 0; i < State.NumStates; i++) {
+		for (int i = 0; i < LutState.NumStates; i++) {
 			for (int j = 0; j < Action.NumActions; j++) {
 				/* init to double can easily overflow the data file... */
 				//cnt++;
@@ -71,11 +71,11 @@ public class LUT {
   		lut[state][action] = value;
   	}
 
-  	public void loadFile(File file) {
+  	public void lutLoadFile(File file) {
   		BufferedReader reader = null;
   		try {
   			reader = new BufferedReader(new FileReader(file));
-  			for (int i = 0; i < State.NumStates; i++)
+  			for (int i = 0; i < LutState.NumStates; i++)
   				for (int j = 0; j < Action.NumActions; j++)
   					lut[i][j] = Double.parseDouble(reader.readLine());
   		} catch (IOException e) {
@@ -93,11 +93,11 @@ public class LUT {
   		}
   	}
 
-  	public void saveFile(File file) {
+  	public void lutSaveFile(File file) {
   		PrintStream writer = null;
   		try {
   			writer = new PrintStream(new RobocodeFileOutputStream(file));
-  			for (int i = 0; i < State.NumStates; i++)
+  			for (int i = 0; i < LutState.NumStates; i++)
   				for (int j = 0; j < Action.NumActions; j++)
   					writer.println(new Double(lut[i][j]));
   			if (writer.checkError())
@@ -115,7 +115,7 @@ public class LUT {
   		}
   	}
   	
-  	public void saveFileForNN(double[][] states, File file) {
+  	public void lutSaveFileForNN(double[][] states, File file) {
   		PrintStream writer = null;
   		try {
   			writer = new PrintStream(new RobocodeFileOutputStream(file));
@@ -129,7 +129,7 @@ public class LUT {
   			*/
   			
   			/* dump NN-friendly file for offline NN training */
-  			for (int i = 0; i < State.NumStates; i++) {
+  			for (int i = 0; i < LutState.NumStates; i++) {
   				for (int j = 0; j < Action.NumActions; j++) {
   					for (int k = 0; k < 6; k++) {
   						writer.print(states[i][k]+" ");
@@ -178,12 +178,12 @@ public class LUT {
   		}
   	}
   	
-  	public void saveFileForNNVerify(double[][] states, File file) {
+  	public void lutSaveFileForNNVerify(double[][] states, File file) {
   		PrintStream writer = null;
   		try {
   			writer = new PrintStream(new RobocodeFileOutputStream(file));
 
-  			for (int i = 0; i < State.NumStates; i++) {
+  			for (int i = 0; i < LutState.NumStates; i++) {
   				for (int j = 0; j < Action.NumActions; j++) {
   					writer.print(i+" [ ");
   					for (int k = 0; k < 6; k++)
@@ -208,11 +208,11 @@ public class LUT {
   		}
   	}
   	
-  	public void saveFileForNNSimple(File file) {
+  	public void lutSaveFileForNNSimple(File file) {
   		PrintStream writer = null;
   		try {
   			writer = new PrintStream(new RobocodeFileOutputStream(file));
-  			for (int i = 0; i < State.NumStates; i++) {
+  			for (int i = 0; i < LutState.NumStates; i++) {
   				for (int j = 0; j < Action.NumActions; j++) {
   					writer.print(i+" "+j+" ");
   					writer.println(new Double(lut[i][j]));

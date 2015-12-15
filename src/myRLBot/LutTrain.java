@@ -2,7 +2,7 @@ package myRLBot;
 
 import java.util.Random;
 
-public class Train {
+public class LutTrain {
 	public static final double ALPHA = 0.1;
 	public static final double GAMMA = 0.9;
 	public static final double EPSILON = 0.9;
@@ -14,7 +14,7 @@ public class Train {
 
 	private LUT table;
 
-	public Train(LUT table) {
+	public LutTrain(LUT table) {
 		this.table = table;
 	}
 

@@ -2,7 +2,7 @@ package myRLBot;
 
 import java.util.Random;
 
-public class NNState {
+public class NeuralNetState {
 	/*
 	public static final int NumHeading = 4;
 	public static final int NumTargetDistance = 3;

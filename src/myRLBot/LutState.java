@@ -1,6 +1,6 @@
 package myRLBot;
 
-public class State {
+public class LutState {
 	public static final int NumHeading = 4; /* 4 headings */
 	public static final int NumTargetDistance = 3; /* only 3 distance */
     public static final int NumTargetBearing = 4; /* 4 bearing */

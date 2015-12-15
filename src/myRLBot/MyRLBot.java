@@ -29,8 +29,8 @@ public class MyRLBot extends AdvancedRobot {
 	public static final double PI = Math.PI;
 	private Target enemy;
 	private LUT lut;
-	private Train rlTrainer;
-	private NNTrain nnrlTrainer;
+	private LutTrain lutTrainer;
+	private NeuralNetTrain nnrlTrainer;
 	//public NeuralNet nn;
 	private double imReward = 0.0;
 	private double reward = 0.0;
@@ -40,15 +40,15 @@ public class MyRLBot extends AdvancedRobot {
 	private int counter_hit = 0;
 	private int counter_fire = 0;
 	private int counter_ram = 0;
-	//private String weightsFile = "/Users/chwlo/Documents/workspace/NCnn/nnWeight.txt";
 	public double[] nnInputs = new double[7];
-	//private double nnrlQvalue[];
+	
 	/* DEBUG PURPOSE
 	private int[][] stateIdx = new int[576][6];
 	static double[] array = new double[100];
 	static int roundCount = 0;
 	static int round = 0;
 	 */
+	
 	public void run() {;
 		/* robocode colors */
 		setBodyColor(new Color(128, 128, 50));
@@ -62,23 +62,16 @@ public class MyRLBot extends AdvancedRobot {
 		/* ok, at least this part is verified */
 		lut = new LUT();
 		enemy = new Target();
-		//nn = new NeuralNet(7, 10, true);
 
 		// comment out as LUT is replaced with NN
 		//rlLoad();
-		/*
-		try {
-			nn.load(weightsFile);
-		} catch (IOException e) {
-			e.getStackTrace();
-		}
-		*/
+
 		/* train object can only be instantiated
 		 * after LUT object is created... */
-		rlTrainer = new Train(lut);
+		lutTrainer = new LutTrain(lut);
 		
 		/* RL NN trainer object */
-		nnrlTrainer = new NNTrain();
+		nnrlTrainer = new NeuralNetTrain();
 		
 		/* init of RLBot & enemey distance */
 		enemy.distance = 1000;
@@ -108,10 +101,10 @@ public class MyRLBot extends AdvancedRobot {
 		
 		/* RL train every robocode processing unit: turn */
 		//double diff = rlTrainer.train(curState, curAction, imReward);
-		getInputs();
-		double diff = nnrlTrainer.train(nnInputs, imReward);
 		
-		//nn.train(inputs, answer, false)
+		/* NN training code */
+		getNNInputs();
+		double diff = nnrlTrainer.train(nnInputs, imReward);		
 		out.println(" DIFF="+diff);
 		/* cumulative rewards */
 		reward = reward + imReward;
@@ -123,17 +116,11 @@ public class MyRLBot extends AdvancedRobot {
 
 		switch (nnrlTrainer.selectAction()) {
 			case Action.RobotAhead:
-				//setAhead(Action.RobotMoveDistance+Action.RobotMoveAddDistance);
-				//setAhead(Action.RobotMoveDistance);
 				setAhead(Action.RobotMoveDistance);
-				//setTurnLeft(Action.RobotTurnDegree);
 				//gunFire(pwr);
 				break;
 			case Action.RobotBack:
-				//setBack(Action.RobotMoveDistance+Action.RobotMoveAddDistance);
-				//setBack(Action.RobotMoveDistance);
 				setBack(Action.RobotMoveDistance);
-				//setTurnLeft(Action.RobotTurnDegree);
 				//gunFire(pwr);
 				break;		
 			case Action.RobotTurnLeft:
@@ -144,29 +131,18 @@ public class MyRLBot extends AdvancedRobot {
 				setTurnRight(Action.RobotTurnDegree);
 				//gunFire(pwr);
 				break;
-				/*
-			case Action.RobotBackTurnLeft:
-				setTurnLeft(Action.RobotTurnDegree);
-				setBack(Action.RobotMoveDistance);
-        		//gunFire(pwr);
-        		break;
-      		case Action.RobotBackTurnRight:
-      			setTurnRight(Action.RobotTurnDegree);
-      			setBack(Action.RobotMoveDistance);
-        		//gunFire(pwr);
-        		break;
-        		*/
       		case Action.RobotFire:
       			gunFire(pwr);
         		break;
 		}
 	}
 
-	private void getInputs() {
-		/*
-		nnInputs[0] = NNState.getHeading(getHeading());
-		nnInputs[1] = NNState.getTargetDistance(enemy.distance);
-		nnInputs[2] = NNState.getTargetBearing(enemy.bearing);
+	private void getNNInputs() {
+		
+		nnInputs[0] = NeuralNetState.getHeading(getHeading());
+		nnInputs[1] = NeuralNetState.getTargetDistance(enemy.distance);
+		nnInputs[2] = NeuralNetState.getTargetBearing(enemy.bearing);
+		
 		if (isHitWall == 1)
 			nnInputs[3] = 1.0;
 		else
@@ -176,10 +152,12 @@ public class MyRLBot extends AdvancedRobot {
 			nnInputs[4] = 1.0;
 		else
 			nnInputs[4] = -1.0;
-		nnInputs[5] = NNState.getEnergy(getEnergy());
-		nnInputs[6] = NNState.nnSelectAction();
-		*/
+		
+		nnInputs[5] = NeuralNetState.getEnergy(getEnergy());
+		nnInputs[6] = NeuralNetState.nnSelectAction();
+		
 		// hard way... no space state reduction at all!
+		/*
 		nnInputs[0] = (double)(2/360)*getHeading()-1.0; //normalize to -1,1
 		nnInputs[1] = (double)(2/500)*enemy.distance-1.0;
 		nnInputs[2] = (double)(2/(2*PI))*enemy.bearing-1.0;
@@ -194,16 +172,16 @@ public class MyRLBot extends AdvancedRobot {
 			nnInputs[4] = -1.0;
 		nnInputs[5] = (double)(2/100)*getEnergy()-1.0;
 		nnInputs[6] = NNState.nnSelectAction();
-		
+		*/
 	}
 	
-	private int getState() {
-		int heading = State.getHeading(getHeading()); // 4 headings
-		int targetDistance = State.getTargetDistance(enemy.distance); //3 distances
-		int targetBearing = State.getTargetBearing(enemy.bearing); // 4 bearings
-		int energy = State.getEnergy(getEnergy()); // 3 energy levels
+	private int getLutState() {
+		int heading = LutState.getHeading(getHeading()); // 4 headings
+		int targetDistance = LutState.getTargetDistance(enemy.distance); //3 distances
+		int targetBearing = LutState.getTargetBearing(enemy.bearing); // 4 bearings
+		int energy = LutState.getEnergy(getEnergy()); // 3 energy levels
 		/* access to a particular state given indices */
-		int state = State.stateTable[heading][targetDistance][targetBearing][isHitWall][isHitByBullet][energy];
+		int state = LutState.stateTable[heading][targetDistance][targetBearing][isHitWall][isHitByBullet][energy];
 		/* DEBUG
 		setDebugProperty("heading", " "+heading);
 		setDebugProperty("distance", " "+targetDistance);
@@ -232,7 +210,6 @@ public class MyRLBot extends AdvancedRobot {
 		stateIdx[state][4] = isHitByBullet;
 		stateIdx[state][5] = energy;
 		*/
-		
 		return state;
 	}
 
@@ -258,7 +235,7 @@ public class MyRLBot extends AdvancedRobot {
   		setTurnRadarLeftRadians(radarOffset);
   	}
 
-    /** 
+    /*
      * Move the gun to the predicted next bearing of the enemy.  
      */
   	private void setupGunMove() {
@@ -278,7 +255,7 @@ public class MyRLBot extends AdvancedRobot {
   		setTurnGunLeftRadians(normaliseBearing(gunOffset));
   	}
 
-  	/**
+  	/*
      * If a bearing is not within the -pi to pi range, 
      * alters it to provide the shortest angle.
      * @param angle The original angle.
@@ -355,8 +332,7 @@ public class MyRLBot extends AdvancedRobot {
   	public void onHitRobot(HitRobotEvent e) {
   		//double change = -0.6 * 1;
   		double change = -1.0;
-  		// let's try ramming the enemy ;-p, doesn't work at all... give up
-  		//double change = 6;
+  		//double change = 6; //try ramming as a reward, doesn't work well...
   		imReward += change;
   		counter_ram++;
   		out.println("+++++++++++++++++++++++++");
@@ -378,38 +354,36 @@ public class MyRLBot extends AdvancedRobot {
   		/* only update enemey status when enemy distance is
   		 * less than last reported enemey distance
   		 * this may not be a good practice */
-  		//if (e.getDistance() < enemy.distance) {
-  			double absbearing_rad = (getHeadingRadians() + e.getBearingRadians()) % (2 * PI);  			
-  			double h = normaliseBearing(e.getHeadingRadians() - enemy.head);
-  			h = h/(getTime() - enemy.ctime);
-  			enemy.changehead = h;
-  			enemy.x = getX()+Math.sin(absbearing_rad)*e.getDistance(); 
-  			enemy.y = getY()+Math.cos(absbearing_rad)*e.getDistance(); 
-  			enemy.bearing = e.getBearingRadians();
-  			enemy.head = e.getHeadingRadians();
-  			enemy.name = e.getName();
-  			enemy.ctime = getTime();
-  			enemy.speed = e.getVelocity();
-  			enemy.distance = e.getDistance();
+  		double absbearing_rad = (getHeadingRadians() + e.getBearingRadians()) % (2 * PI);  			
+  		double h = normaliseBearing(e.getHeadingRadians() - enemy.head);
+  		h = h/(getTime() - enemy.ctime);
+  		enemy.changehead = h;
+  		enemy.x = getX()+Math.sin(absbearing_rad)*e.getDistance(); 
+  		enemy.y = getY()+Math.cos(absbearing_rad)*e.getDistance(); 
+  		enemy.bearing = e.getBearingRadians();
+  		enemy.head = e.getHeadingRadians();
+  		enemy.name = e.getName();
+  		enemy.ctime = getTime();
+  		enemy.speed = e.getVelocity();
+  		enemy.distance = e.getDistance();
   			
-  			// if seeing enemy enery is dropping, it's good
-  			if (e.getEnergy() < enemy.energy) {
-  				double change = e.getEnergy()-enemy.energy;
-  				//out.println("energy diff: " + change);
-  				// a buggy 100 energy drop due to init
-  				// only add rewards when it's due to miss firing
-  				// actually every bullet enemy fires his energy
-  				// will drop 0~3 energy. but we have negative
-  				// rewards when me is hit by a bullet so that
-  				// should be cancelled anyways plus a big rewards
-  				// for dodging the bullet.
-  				if (change != 100 && change <= 3)
-  					// for bullet dodge
-  					imReward += 5.0;
-  				setDebugProperty("onEnemyEnergyDrop", " "+ imReward);
-  			}
-  			enemy.energy = e.getEnergy();
-  		//}
+  		// if seeing enemy enery is dropping, it's good
+  		if (e.getEnergy() < enemy.energy) {
+  			double change = e.getEnergy()-enemy.energy;
+  			//out.println("energy diff: " + change);
+  			// a buggy 100 energy drop due to init
+  			// only add rewards when it's due to miss firing
+  			// actually every bullet enemy fires his energy
+  			// will drop 0~3 energy. but we have negative
+  			// rewards when me is hit by a bullet so that
+  			// should be cancelled anyways plus a big rewards
+  			// for dodging the bullet.
+  			if (change != 100 && change <= 3)
+  				// for bullet dodge
+  				imReward += 5.0;
+  			setDebugProperty("onEnemyEnergyDrop", " "+ imReward);
+  		}
+  		enemy.energy = e.getEnergy();
   	}
 
   	public void onRobotDeath(RobotDeathEvent e) {
@@ -418,18 +392,11 @@ public class MyRLBot extends AdvancedRobot {
   	}
 
   	public void onWin(WinEvent event) {
-  	/* not necessary
+  		/* terminal is not necessary
   		double change = 6;
   		imReward += change;
   		setDebugProperty("onWin", " "+change);
   		*/
-  		/* do a victory dance */
-  		/*
-  		for (int i = 0; i < 50; i++) {
-			turnRight(30);
-			turnLeft(30);
-		}
-		*/
   		//rlSave();
   		//saveToNN(State.nnInputTable);
   		//saveToNNVerify(stateIdx);
@@ -464,53 +431,54 @@ public class MyRLBot extends AdvancedRobot {
   		out.println(">>> Reward: " + reward);
   	}
 
-  	public void rlLoad() {
+  	public void lutLoad() {
   		out.println(">>> load LUT");
   		try {
-  			lut.loadFile(getDataFile("data.txt"));
+  			lut.lutLoadFile(getDataFile("data.txt"));
   		} catch (Exception e) {
   		}
   	}
 
-  	public void rlSave() {
+  	public void lutSave() {
   		out.println(">>> save LUT");
   		try {
-  			lut.saveFile(getDataFile("data.txt"));
+  			lut.lutSaveFile(getDataFile("data.txt"));
   		} catch (Exception e) {
   			out.println("Exception trying to write: " + e);
   		}  
   	}
   	
-  	public void saveToNN(double[][] states) {
+  	public void lutSaveToNN(double[][] states) {
   		out.println(">>> save LUT in NN format");
   		try {
-  			lut.saveFileForNN(states, getDataFile("nn.txt"));
+  			lut.lutSaveFileForNN(states, getDataFile("nn.txt"));
   		} catch (Exception e) {
   			out.println("Exception trying to write: " + e);
   		}  
   	}
 
-  	public void saveToNNVerify(double[][] states) {
+  	public void lutSaveToNNVerify(double[][] states) {
   		out.println(">>> save LUT in NN-Verify format");
   		try {
   			/* HMM... Not always right but I think because of the way
   			 * the 2D array is being init
   			 */
-  			lut.saveFileForNNVerify(states, getDataFile("nnVerify.txt"));
+  			lut.lutSaveFileForNNVerify(states, getDataFile("nnVerify.txt"));
   		} catch (Exception e) {
   			out.println("Exception trying to write: " + e);
   		}  
   	}
   	
-  	/* also for verify purpose
+  	/* 
+  	 * also for verify purpose
   	 * to check if the Q-Values
   	 * are updated correctly at
   	 * target state-action pair
-  	 * */
-  	public void saveToNNSimple() {
+  	 */
+  	public void lutSaveToNNSimple() {
   		out.println(">>> save LUT in NN-Simple format");
   		try {
-  			lut.saveFileForNNSimple(getDataFile("nnSimple.txt"));
+  			lut.lutSaveFileForNNSimple(getDataFile("nnSimple.txt"));
   		} catch (Exception e) {
   			out.println("Exception trying to write: " + e);
   		}  
@@ -519,7 +487,7 @@ public class MyRLBot extends AdvancedRobot {
   	public void onBattleEnded (BattleEndedEvent e) {
   		// only save NN format when LUT is converged
   		// also to save to NN simple to do verification
-  		saveToNN(State.nnInputTable);
+  		lutSaveToNN(LutState.nnInputTable);
   		//saveToNNSimple();
   	}
   	

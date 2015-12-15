@@ -6,7 +6,7 @@ import java.util.Random;
 import chengli.NeuralNet;
 
 
-public class NNTrain {
+public class NeuralNetTrain {
 	public static final double ALPHA = 0.1;
 	public static final double GAMMA = 0.9;
 	public static final double EPSILON = 0.9;
@@ -18,9 +18,9 @@ public class NNTrain {
 	private NeuralNet nn;
 	private String weightsFile = "/Users/chwlo/Documents/workspace/EECE592/data/nnWeight.txt";
 
-	private LUT table;
+	//private LUT table;
 
-	public NNTrain() {
+	public NeuralNetTrain() {
 		nn = new NeuralNet(7, 10, true, 0.01, 0.9);
 		try {
 			nn.load(weightsFile);
