@@ -42,7 +42,7 @@ public class MyRLBot extends AdvancedRobot {
 	private int counter_fire = 0;
 	private int counter_ram = 0;
 	public double[] nnInputs = new double[7];
-	private final String weightsFile = "/Users/chwlo/Documents/workspace/EECE592/data/nnWeight1.txt";
+	private final String weightsFile = "/Users/chwlo/Documents/workspace/EECE592/data/online-nnWeight.txt";
 	private final File wFile = new File(weightsFile);
 	
 	/* DEBUG PURPOSE
